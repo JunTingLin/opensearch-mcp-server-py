@@ -64,7 +64,7 @@ def initialize_client_with_cluster(cluster_info: ClusterInfo = None) -> OpenSear
     2. AWS IAM authentication using boto3 credentials
        - Uses 'aoss' service name if OPENSEARCH_SERVERLESS=true
        - Uses 'es' service name otherwise
-    3. No authentication as fallback for clusters that don't require authentication
+    3. No authentication (only if OPENSEARCH_NO_AUTH=true environment variable is set)
 
     Args:
         cluster_info (ClusterInfo): Cluster information object containing authentication and connection details
@@ -167,12 +167,13 @@ def initialize_client_with_cluster(cluster_info: ClusterInfo = None) -> OpenSear
     except (boto3.exceptions.Boto3Error, Exception) as e:
         logger.error(f'[AWS CREDS] Failed to get AWS credentials: {str(e)}')
 
-    # Try no authentication as last resort
-    logger.info('[NO AUTH] Attempting connection without authentication')
-    try:
-        return OpenSearch(**client_kwargs)
-    except Exception as e:
-        logger.error(f'[NO AUTH] Failed to connect without authentication: {str(e)}')
+    # 4. Try no authentication if explicitly enabled
+    if os.getenv('OPENSEARCH_NO_AUTH', '').lower() == 'true':
+        logger.info('[NO AUTH] Attempting connection without authentication (OPENSEARCH_NO_AUTH=true)')
+        try:
+            return OpenSearch(**client_kwargs)
+        except Exception as e:
+            logger.error(f'[NO AUTH] Failed to connect without authentication: {str(e)}')
         
     raise RuntimeError('No valid AWS or basic authentication provided for OpenSearch')
 
