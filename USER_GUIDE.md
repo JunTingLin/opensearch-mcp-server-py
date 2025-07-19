@@ -71,6 +71,22 @@ Configure `claude_desktop_config.json` from Settings > Developer. See [here](htt
   }
 }
 ```
+
+**For clusters without authentication:**
+```json
+{
+  "mcpServers": {
+    "opensearch-mcp-server": {
+      "command": "uvx",
+      "args": ["opensearch-mcp-server-py"],
+      "env": {
+        "OPENSEARCH_URL": "<your_opensearch_domain_url>",
+        "OPENSEARCH_NO_AUTH": "true"
+      }
+    }
+  }
+}
+```
 See [Environment Variables](#environment-variables) for supported environment variables. 
 See [Authentication](#authentication) section for detailed authentication setup.
 
@@ -190,6 +206,7 @@ The server supports multiple authentication methods with the following priority 
 1. **IAM Role Authentication**
 2. **Basic Authentication**
 3. **AWS Credentials Authentication**
+4. **No Authentication** (only if `OPENSEARCH_NO_AUTH=true` environment variable is set)
 
 ### Single Mode Authentication
 
@@ -225,6 +242,12 @@ export AWS_REGION="<your_aws_region>"
 export AWS_PROFILE="<your_aws_profile>"
 ```
 
+#### No Authentication (for clusters without authentication)
+```bash
+export OPENSEARCH_URL="<your_opensearch_domain_url>"
+export OPENSEARCH_NO_AUTH="true"
+```
+
 ### Multi Mode Authentication
 
 Multi mode uses a YAML configuration file to define authentication for each cluster:
@@ -258,6 +281,11 @@ clusters:
     aws_region: "us-east-1"
     profile: "your-aws-profile"
     is_serverless: true
+
+  # No Authentication (for clusters without authentication)
+  no-auth-cluster:
+    opensearch_url: "http://localhost:9200"
+    opensearch_no_auth: true
 ```
 
 #### Authentication Methods in Multi Mode:
@@ -272,6 +300,10 @@ clusters:
 3. **AWS Credentials Authentication:**
    - Requires: `opensearch_url`, `profile` (optional)
    - Uses AWS credentials from the specified profile or default credentials
+
+4. **No Authentication:**
+   - Requires: `opensearch_url`, `opensearch_no_auth: true`
+   - For OpenSearch clusters that allow anonymous access without authentication
 
 ### AWS Profile Support
 
@@ -353,6 +385,7 @@ python -m mcp_server_opensearch --mode multi
 | `AWS_SESSION_TOKEN` | No | `''` | AWS session token |
 | `AWS_PROFILE` | No | `''` | AWS profile name |
 | `AWS_OPENSEARCH_SERVERLESS` | No | `''` | Set to `"true"` for OpenSearch Serverless |
+| `OPENSEARCH_NO_AUTH` | No | `''` | Set to `"true"` to connect without authentication |
 
 ### SSL & Security Variables
 
@@ -385,6 +418,7 @@ When using multi-mode, each cluster in your YAML configuration file accepts the 
 | `aws_region` | string | No* | AWS region for the OpenSearch cluster |
 | `profile` | string | No | AWS profile name |
 | `is_serverless` | boolean | No | Set to `true` for OpenSearch Serverless |
+| `opensearch_no_auth` | boolean | No | Set to `true` to connect without authentication |
 
 *Required for respective authentication method (basic auth, IAM role, or AWS credentials)
 
@@ -396,6 +430,7 @@ When using multi-mode, each cluster in your YAML configuration file accepts the 
 | **IAM Role Authentication** | `opensearch_url`, `iam_arn`, `aws_region` | `profile` |
 | **AWS Credentials Authentication** | `opensearch_url` | `aws_region`, `profile` |
 | **OpenSearch Serverless** | `opensearch_url`, `aws_region` | `profile`, `is_serverless: true` |
+| **No Authentication** | `opensearch_url` | `opensearch_no_auth: true` |
 
 ## Tool Filter
 
